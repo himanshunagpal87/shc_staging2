@@ -1,0 +1,486 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0b0f1a">
+<link rel="manifest" href="manifest.json">
+<title>SHC Home Visit — Associate App (STAGING)</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@600;700&display=swap');
+  :root {
+    --bg:#0b0f1a; --surface:#111827; --card:#1a2236; --card-hover:#1e2a40; --border:#1f2d45;
+    --accent:#14b8a6; --accent-light:#2dd4bf; --accent-glow:rgba(20,184,166,0.15);
+    --green:#10b981; --green-bg:rgba(16,185,129,0.12);
+    --yellow:#f59e0b; --yellow-bg:rgba(245,158,11,0.12);
+    --red:#ef4444; --red-bg:rgba(239,68,68,0.12);
+    --text:#f1f5f9; --text-muted:#64748b; --text-soft:#94a3b8; --radius:10px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; min-height:100dvh; padding-bottom:24px; }
+  .banner { background:var(--yellow-bg); color:var(--yellow); font-size:11.5px; font-weight:600; text-align:center; padding:6px; letter-spacing:.4px; }
+  header { padding:16px 16px 10px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; background:rgba(11,15,26,0.95); backdrop-filter:blur(8px); z-index:40; }
+  header h1 { font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:700; }
+  header .sub { font-size:10.5px; color:var(--text-muted); }
+  .icon-btn { background:var(--card); border:1px solid var(--border); color:var(--text); border-radius:8px; width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; font-size:15px; cursor:pointer; }
+  main { max-width:520px; margin:0 auto; padding:14px 14px 40px; }
+  .hidden { display:none !important; }
+
+  .card { background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:12px; }
+  .card h2 { font-family:'Space Grotesk',sans-serif; font-size:14.5px; margin-bottom:10px; }
+  .muted { color:var(--text-muted); font-size:12px; }
+  .soft { color:var(--text-soft); font-size:12.5px; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  .pill { display:inline-block; padding:3px 9px; border-radius:20px; font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.4px; }
+  .pill-green { background:var(--green-bg); color:var(--green); }
+  .pill-yellow { background:var(--yellow-bg); color:var(--yellow); }
+  .pill-red { background:var(--red-bg); color:var(--red); }
+  .pill-muted { background:var(--border); color:var(--text-soft); }
+
+  .btn { padding:11px 16px; border-radius:9px; border:none; font-size:13.5px; font-weight:600; cursor:pointer; width:100%; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .btn-primary { background:var(--accent); color:#04231f; }
+  .btn-primary:disabled { opacity:.45; cursor:not-allowed; }
+  .btn-secondary { background:var(--card-hover); color:var(--text); border:1px solid var(--border); }
+  .btn-danger { background:var(--red-bg); color:var(--red); }
+  .btn-sm { padding:7px 12px; font-size:12px; width:auto; }
+
+  .field { margin-bottom:12px; }
+  .field label { display:block; font-size:11.5px; color:var(--text-soft); margin-bottom:5px; font-weight:600; }
+  .field input, .field textarea, .field select {
+    width:100%; background:var(--bg); border:1px solid var(--border); border-radius:8px;
+    padding:10px 11px; color:var(--text); font-size:14px; font-family:inherit;
+  }
+  .field textarea { resize:vertical; min-height:70px; }
+  .field-error { color:var(--red); font-size:11px; margin-top:4px; min-height:14px; }
+  .checklist-item { display:flex; align-items:flex-start; gap:10px; padding:9px 0; border-bottom:1px solid var(--border); }
+  .checklist-item:last-child { border-bottom:none; }
+  .checklist-item input { width:18px; height:18px; margin-top:2px; accent-color:var(--accent); }
+  .checklist-item span { font-size:13px; }
+
+  .visit-item { padding:12px; border:1px solid var(--border); border-radius:9px; margin-bottom:9px; cursor:pointer; }
+  .visit-item:active { background:var(--card-hover); }
+  .visit-item .name { font-weight:600; font-size:14px; }
+  .visit-item .meta { font-size:11.5px; color:var(--text-muted); margin-top:3px; }
+
+  .selfie-preview { width:100%; max-width:220px; border-radius:9px; border:1px solid var(--border); margin-top:8px; display:block; }
+  .gps-readout { font-size:11px; color:var(--text-muted); margin-top:6px; font-family:monospace; }
+  .step-done { color:var(--green); font-size:12.5px; font-weight:600; display:flex; align-items:center; gap:6px; }
+  .section-divider { height:1px; background:var(--border); margin:16px 0; }
+  .toast { position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:var(--card); border:1px solid var(--border); border-radius:9px; padding:10px 18px; font-size:12.5px; z-index:200; box-shadow:0 8px 24px rgba(0,0,0,0.4); }
+  .toast.err { border-color:var(--red); color:var(--red); }
+  .toast.ok { border-color:var(--green); color:var(--green); }
+
+  #loginScreen { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:radial-gradient(circle at 30% 20%, rgba(20,184,166,0.12), transparent 45%), var(--bg); z-index:500; padding:20px; }
+  .login-card { width:100%; max-width:360px; background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:30px 26px; }
+  .login-card h1 { font-family:'Space Grotesk',sans-serif; font-size:17px; margin-bottom:4px; }
+  .login-card .sub { font-size:12px; color:var(--text-muted); margin-bottom:20px; }
+</style>
+</head>
+<body>
+
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>SHC Home Visit</h1>
+    <div class="sub">Associate app — STAGING environment</div>
+    <div class="field"><label>Email</label><input id="loginEmail" type="email" autocomplete="username"></div>
+    <div class="field"><label>Password</label><input id="loginPassword" type="password" autocomplete="current-password"></div>
+    <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">Sign In</button>
+    <div class="field-error" id="loginError"></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="banner">⚠ STAGING — test data only, not connected to production</div>
+  <header>
+    <div>
+      <h1 id="headerTitle">My Visits</h1>
+      <div class="sub" id="headerSub"></div>
+    </div>
+    <button class="icon-btn" onclick="signOut()" title="Sign out">⎋</button>
+  </header>
+  <main>
+    <div id="viewVisits"></div>
+    <div id="viewDetail" class="hidden"></div>
+  </main>
+</div>
+
+<div id="toastHost"></div>
+
+<script>
+/* ======================================================================
+   CONFIG — staging project
+   ====================================================================== */
+const SUPABASE_URL = "https://upgtiqllmmrstrvmmarj.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_7xXKpmh3-ZrEkBSWESA_bQ_xcb6rtf3";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const state = { session: null, staff: null, visits: [], activeAppointmentId: null, activeVisit: null };
+
+function toast(msg, type) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (type ? ' ' + type : '');
+  el.textContent = msg;
+  document.getElementById('toastHost').appendChild(el);
+  setTimeout(() => el.remove(), 3200);
+}
+function escapeHtml(s) {
+  if (s === null || s === undefined) return "";
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+function fmtDateTime(d) {
+  if (!d) return "—";
+  const dt = new Date(d);
+  if (isNaN(dt)) return "—";
+  return dt.toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" });
+}
+
+/* ------------------------------------------------------------------
+   AUTH
+   ------------------------------------------------------------------ */
+async function doLogin() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.textContent = "";
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = "Signing in…";
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = "Sign In";
+  if (error) { errEl.textContent = error.message; return; }
+  state.session = data.session;
+  await afterLogin();
+}
+
+async function afterLogin() {
+  const { data: staffRow, error } = await sb.from('staff').select('id,name,email,role,active,home_visit_eligible,experience_level').eq('id', state.session.user.id).maybeSingle();
+  if (error || !staffRow) {
+    document.getElementById('loginError').textContent = "No staff record found for this login, or you don't have access.";
+    await sb.auth.signOut();
+    return;
+  }
+  if (!staffRow.active) {
+    document.getElementById('loginError').textContent = "This account is inactive.";
+    await sb.auth.signOut();
+    return;
+  }
+  if (!staffRow.home_visit_eligible) {
+    document.getElementById('loginError').textContent = "This account is not enabled for home visits.";
+    await sb.auth.signOut();
+    return;
+  }
+  state.staff = staffRow;
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('headerSub').textContent = staffRow.name + " · " + (staffRow.experience_level || 'associate');
+  await loadVisits();
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  state.session = null; state.staff = null;
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+  document.getElementById('loginPassword').value = "";
+}
+
+sb.auth.onAuthStateChange((event) => { if (event === 'SIGNED_OUT') { /* handled explicitly in signOut() */ } });
+
+/* ------------------------------------------------------------------
+   VISITS LIST
+   ------------------------------------------------------------------ */
+async function loadVisits() {
+  document.getElementById('viewDetail').classList.add('hidden');
+  document.getElementById('viewVisits').classList.remove('hidden');
+  document.getElementById('headerTitle').textContent = "My Visits";
+  const el = document.getElementById('viewVisits');
+  el.innerHTML = '<div class="muted">Loading…</div>';
+
+  const { data, error } = await sb.from('appointments')
+    .select('id,slot_time,status,appointment_type,home_visit_address,notes,patient:patients(name,phone),doctor:doctors!appointments_doctor_id_fkey(name)')
+    .eq('appointment_type', 'home')
+    .is('deleted_at', null)
+    .order('slot_time', { ascending: true });
+
+  if (error) { el.innerHTML = '<div class="card">Could not load visits: ' + escapeHtml(error.message) + '</div>'; return; }
+  state.visits = data || [];
+
+  if (!state.visits.length) {
+    el.innerHTML = '<div class="card muted">No home visits assigned to you right now.</div>';
+    return;
+  }
+
+  el.innerHTML = state.visits.map(v => `
+    <div class="visit-item" onclick="openVisit(${v.id})">
+      <div class="row">
+        <div class="name">${escapeHtml(v.patient ? v.patient.name : 'Unknown patient')}</div>
+        <span class="pill ${v.status === 'confirmed' ? 'pill-green' : 'pill-muted'}">${escapeHtml(v.status)}</span>
+      </div>
+      <div class="meta">${fmtDateTime(v.slot_time)} · ${escapeHtml(v.doctor ? v.doctor.name : '—')}</div>
+      <div class="meta">${escapeHtml(v.home_visit_address || 'No address on file')}</div>
+    </div>
+  `).join('');
+}
+
+/* ------------------------------------------------------------------
+   VISIT DETAIL
+   ------------------------------------------------------------------ */
+async function openVisit(appointmentId) {
+  state.activeAppointmentId = appointmentId;
+  document.getElementById('viewVisits').classList.add('hidden');
+  const el = document.getElementById('viewDetail');
+  el.classList.remove('hidden');
+  document.getElementById('headerTitle').textContent = "Visit Detail";
+  el.innerHTML = '<div class="muted">Loading…</div>';
+
+  const appt = state.visits.find(v => v.id === appointmentId);
+
+  const [{ data: apptFull }, { data: checklistRows }, { data: checkinRows }] = await Promise.all([
+    sb.from('appointments').select('id,patient_id,slot_time,status,home_visit_address,supervising_id,doctor:doctors!appointments_doctor_id_fkey(name),supervisor:staff!appointments_supervising_id_fkey(name)').eq('id', appointmentId).single(),
+    sb.from('home_visit_checklists').select('*').eq('appointment_id', appointmentId).maybeSingle(),
+    sb.from('home_visit_checkins').select('*').eq('appointment_id', appointmentId).order('id', { ascending: false }).limit(1).maybeSingle(),
+  ]);
+
+  const { data: patient } = await sb.from('patients').select('id,name,phone,dob,gender,address,emergency_contact_name,emergency_contact_phone').eq('id', apptFull.patient_id).single();
+  const { data: protocols } = await sb.from('treatment_protocols').select('id,protocol_name,description,status,prognosis').eq('patient_id', apptFull.patient_id).eq('status', 'active');
+  const { data: history } = await sb.from('medical_history').select('condition,diagnosis_date,notes').eq('patient_id', apptFull.patient_id).order('diagnosis_date', { ascending: false });
+  const { data: priorNotes } = await sb.from('treatment_session_notes').select('session_date,notes,exercises_prescribed,pain_score_before,pain_score_after').eq('patient_id', apptFull.patient_id).order('session_date', { ascending: false }).limit(5);
+
+  let protoExercises = [];
+  if (protocols && protocols.length) {
+    const { data: pe } = await sb.from('protocol_exercises').select('sets,reps,frequency,notes,exercise:exercises(name,instructions,category)').eq('treatment_protocol_id', protocols[0].id);
+    protoExercises = pe || [];
+  }
+
+  const checklist = checklistRows || {};
+  const checkin = checkinRows || {};
+  const checklistDone = checklist.plan_of_care_confirmed && checklist.home_safety_checked && checklist.patient_consent_confirmed;
+  const checkedIn = !!checkin.check_in_at;
+  const checkedOut = !!checkin.check_out_at;
+
+  el.innerHTML = `
+    <button class="btn btn-secondary btn-sm" style="width:auto;margin-bottom:12px" onclick="loadVisits()">← Back to visits</button>
+
+    <div class="card">
+      <h2>${escapeHtml(patient.name)}</h2>
+      <div class="soft">${fmtDateTime(apptFull.slot_time)} · ${escapeHtml(apptFull.doctor ? apptFull.doctor.name : '—')}</div>
+      <div class="soft">Supervising: ${escapeHtml(apptFull.supervisor ? apptFull.supervisor.name : 'Not set')}</div>
+      <div class="soft">${escapeHtml(apptFull.home_visit_address || patient.address || 'No address on file')}</div>
+      <div class="soft">Phone: ${escapeHtml(patient.phone)} ${patient.dob ? '· DOB ' + escapeHtml(patient.dob) : ''} ${patient.gender ? '· ' + escapeHtml(patient.gender) : ''}</div>
+      ${patient.emergency_contact_name ? `<div class="soft">Emergency contact: ${escapeHtml(patient.emergency_contact_name)} (${escapeHtml(patient.emergency_contact_phone||'')})</div>` : ''}
+    </div>
+
+    <div class="card">
+      <h2>1. Pre-Visit Checklist</h2>
+      <div class="checklist-item"><input type="checkbox" id="chk_plan" ${checklist.plan_of_care_confirmed ? 'checked' : ''}><span>Plan of care confirmed for this visit</span></div>
+      <div class="checklist-item"><input type="checkbox" id="chk_safety" ${checklist.home_safety_checked ? 'checked' : ''}><span>Home environment / safety checked on arrival</span></div>
+      <div class="checklist-item"><input type="checkbox" id="chk_consent" ${checklist.patient_consent_confirmed ? 'checked' : ''}><span>Patient consent for this home visit confirmed</span></div>
+      <button class="btn btn-secondary" style="margin-top:10px" onclick="saveChecklist(${appointmentId})">Save Checklist</button>
+    </div>
+
+    <div class="card">
+      <h2>2. Check-In</h2>
+      ${checkedIn
+        ? `<div class="step-done">✓ Checked in at ${fmtDateTime(checkin.check_in_at)}</div><div class="gps-readout">${checkin.check_in_lat ? checkin.check_in_lat.toFixed(5) + ', ' + checkin.check_in_lng.toFixed(5) : 'no GPS recorded'}</div>`
+        : `
+          <div class="field"><label>Selfie</label><input type="file" accept="image/*" capture="user" id="selfieInCapture" onchange="previewSelfie(this,'selfieInPreview')"></div>
+          <img id="selfieInPreview" class="selfie-preview hidden">
+          <div class="gps-readout" id="gpsInReadout">GPS not captured yet.</div>
+          <button class="btn btn-primary" style="margin-top:10px" onclick="checkIn(${appointmentId})" ${checklistDone ? '' : 'disabled'}>Check In</button>
+          ${checklistDone ? '' : '<div class="field-error">Complete the checklist above first.</div>'}
+        `
+      }
+    </div>
+
+    <div class="card">
+      <h2>3. Patient Context (read-only)</h2>
+      ${protocols && protocols.length ? protocols.map(p => `
+        <div style="margin-bottom:10px">
+          <div style="font-weight:600;font-size:13px">${escapeHtml(p.protocol_name)}</div>
+          <div class="soft">${escapeHtml(p.description || '')}</div>
+        </div>
+      `).join('') : '<div class="muted">No active protocol on file.</div>'}
+      ${protoExercises.length ? `
+        <div class="section-divider"></div>
+        <div class="soft" style="margin-bottom:6px;font-weight:600">Prescribed exercises</div>
+        ${protoExercises.map(pe => `<div class="soft">• ${escapeHtml(pe.exercise.name)} — ${pe.sets||'-'}×${pe.reps||'-'}${pe.frequency ? ', ' + escapeHtml(pe.frequency) : ''}</div>`).join('')}
+      ` : ''}
+      ${history && history.length ? `
+        <div class="section-divider"></div>
+        <div class="soft" style="margin-bottom:6px;font-weight:600">Medical history</div>
+        ${history.map(h => `<div class="soft">• ${escapeHtml(h.condition)}${h.diagnosis_date ? ' (' + escapeHtml(h.diagnosis_date) + ')' : ''}</div>`).join('')}
+      ` : ''}
+      ${priorNotes && priorNotes.length ? `
+        <div class="section-divider"></div>
+        <div class="soft" style="margin-bottom:6px;font-weight:600">Recent session notes</div>
+        ${priorNotes.map(n => `<div class="soft" style="margin-bottom:6px">${escapeHtml(n.session_date)}: ${escapeHtml(n.notes || '(no notes)')}</div>`).join('')}
+      ` : ''}
+    </div>
+
+    <div class="card">
+      <h2>4. This Session's Notes</h2>
+      <div class="field"><label>Notes</label><textarea id="sessionNotes" placeholder="What was done this session..."></textarea></div>
+      <div class="field"><label>Exercises prescribed / adjusted</label><textarea id="sessionExercises"></textarea></div>
+      <div class="row" style="gap:10px">
+        <div class="field" style="flex:1"><label>Pain before (0-10)</label><input type="number" min="0" max="10" id="painBefore"></div>
+        <div class="field" style="flex:1"><label>Pain after (0-10)</label><input type="number" min="0" max="10" id="painAfter"></div>
+      </div>
+      <button class="btn btn-secondary" onclick="saveSessionNote(${appointmentId}, ${apptFull.patient_id})" ${checkedIn ? '' : 'disabled'}>Save Session Note</button>
+      ${checkedIn ? '' : '<div class="field-error">Check in first.</div>'}
+    </div>
+
+    <div class="card">
+      <h2>5. Propose a Protocol Change</h2>
+      <div class="muted" style="margin-bottom:8px">Routed to the supervising doctor for approval — not applied directly.</div>
+      <div class="field"><textarea id="protocolChangeText" placeholder="Describe the change you'd like to propose..."></textarea></div>
+      <button class="btn btn-secondary" onclick="proposeProtocolChange(${apptFull.patient_id}, ${protocols && protocols.length ? protocols[0].id : 'null'})" ${protocols && protocols.length ? '' : 'disabled'}>Submit for Review</button>
+      ${protocols && protocols.length ? '' : '<div class="muted">No active protocol to propose a change against.</div>'}
+    </div>
+
+    <div class="card">
+      <h2>6. Check-Out</h2>
+      ${checkedOut
+        ? `<div class="step-done">✓ Checked out at ${fmtDateTime(checkin.check_out_at)}</div>`
+        : `
+          <div class="field"><label>Selfie</label><input type="file" accept="image/*" capture="user" id="selfieOutCapture" onchange="previewSelfie(this,'selfieOutPreview')"></div>
+          <img id="selfieOutPreview" class="selfie-preview hidden">
+          <div class="gps-readout" id="gpsOutReadout">GPS not captured yet.</div>
+          <button class="btn btn-primary" style="margin-top:10px" onclick="checkOut(${appointmentId})" ${checkedIn ? '' : 'disabled'}>Check Out / Complete Visit</button>
+          ${checkedIn ? '' : '<div class="field-error">Check in first.</div>'}
+        `
+      }
+    </div>
+  `;
+}
+
+function previewSelfie(input, previewId) {
+  const file = input.files[0];
+  if (!file) return;
+  const img = document.getElementById(previewId);
+  img.src = URL.createObjectURL(file);
+  img.classList.remove('hidden');
+}
+
+function getGPS() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) { reject(new Error('Geolocation not supported on this device/browser.')); return; }
+    navigator.geolocation.getCurrentPosition(
+      pos => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      err => reject(new Error('Could not get location: ' + err.message)),
+      { enableHighAccuracy: true, timeout: 15000 }
+    );
+  });
+}
+
+async function saveChecklist(appointmentId) {
+  const payload = {
+    appointment_id: appointmentId,
+    plan_of_care_confirmed: document.getElementById('chk_plan').checked,
+    home_safety_checked: document.getElementById('chk_safety').checked,
+    patient_consent_confirmed: document.getElementById('chk_consent').checked,
+    completed_by: state.staff.id,
+    completed_at: new Date().toISOString(),
+  };
+  const { error } = await sb.from('home_visit_checklists').upsert(payload, { onConflict: 'appointment_id' });
+  if (error) { toast('Could not save checklist: ' + error.message, 'err'); return; }
+  toast('Checklist saved.', 'ok');
+  openVisit(appointmentId);
+}
+
+async function uploadSelfie(file, appointmentId, which) {
+  const path = `${state.staff.id}/${appointmentId}_${which}_${Date.now()}.jpg`;
+  const { error } = await sb.storage.from('home-visit-selfies').upload(path, file, { contentType: file.type || 'image/jpeg' });
+  if (error) throw error;
+  return path;
+}
+
+async function checkIn(appointmentId) {
+  const fileInput = document.getElementById('selfieInCapture');
+  if (!fileInput.files[0]) { toast('Please take a selfie first.', 'err'); return; }
+  let gps;
+  try { gps = await getGPS(); document.getElementById('gpsInReadout').textContent = gps.lat.toFixed(5) + ', ' + gps.lng.toFixed(5); }
+  catch (e) { toast(e.message, 'err'); return; }
+
+  let selfiePath;
+  try { selfiePath = await uploadSelfie(fileInput.files[0], appointmentId, 'checkin'); }
+  catch (e) { toast('Selfie upload failed: ' + e.message, 'err'); return; }
+
+  const { error } = await sb.from('home_visit_checkins').insert({
+    appointment_id: appointmentId,
+    associate_staff_id: state.staff.id,
+    check_in_at: new Date().toISOString(),
+    check_in_lat: gps.lat, check_in_lng: gps.lng,
+    selfie_check_in_path: selfiePath,
+  });
+  if (error) { toast('Check-in failed: ' + error.message, 'err'); return; }
+  toast('Checked in.', 'ok');
+  openVisit(appointmentId);
+}
+
+async function checkOut(appointmentId) {
+  const fileInput = document.getElementById('selfieOutCapture');
+  if (!fileInput.files[0]) { toast('Please take a selfie first.', 'err'); return; }
+  let gps;
+  try { gps = await getGPS(); document.getElementById('gpsOutReadout').textContent = gps.lat.toFixed(5) + ', ' + gps.lng.toFixed(5); }
+  catch (e) { toast(e.message, 'err'); return; }
+
+  let selfiePath;
+  try { selfiePath = await uploadSelfie(fileInput.files[0], appointmentId, 'checkout'); }
+  catch (e) { toast('Selfie upload failed: ' + e.message, 'err'); return; }
+
+  const { data: existing } = await sb.from('home_visit_checkins').select('id').eq('appointment_id', appointmentId).order('id', { ascending: false }).limit(1).single();
+  const { error } = await sb.from('home_visit_checkins').update({
+    check_out_at: new Date().toISOString(),
+    check_out_lat: gps.lat, check_out_lng: gps.lng,
+    selfie_check_out_path: selfiePath,
+  }).eq('id', existing.id);
+  if (error) { toast('Check-out failed: ' + error.message, 'err'); return; }
+
+  await sb.from('appointments').update({ status: 'completed', completed_at: new Date().toISOString() }).eq('id', appointmentId);
+  toast('Visit completed.', 'ok');
+  openVisit(appointmentId);
+}
+
+async function saveSessionNote(appointmentId, patientId) {
+  const payload = {
+    appointment_id: appointmentId,
+    patient_id: patientId,
+    session_date: new Date().toISOString().slice(0,10),
+    notes: document.getElementById('sessionNotes').value.trim(),
+    exercises_prescribed: document.getElementById('sessionExercises').value.trim(),
+    pain_score_before: document.getElementById('painBefore').value || null,
+    pain_score_after: document.getElementById('painAfter').value || null,
+    created_by: state.staff.id,
+  };
+  const { error } = await sb.from('treatment_session_notes').insert(payload);
+  if (error) { toast('Could not save note: ' + error.message, 'err'); return; }
+  toast('Session note saved.', 'ok');
+  document.getElementById('sessionNotes').value = "";
+  document.getElementById('sessionExercises').value = "";
+}
+
+async function proposeProtocolChange(patientId, protocolId) {
+  const text = document.getElementById('protocolChangeText').value.trim();
+  if (!text) { toast('Describe the proposed change first.', 'err'); return; }
+  const { error } = await sb.from('protocol_change_requests').insert({
+    treatment_protocol_id: protocolId,
+    appointment_id: state.activeAppointmentId,
+    proposed_by: state.staff.id,
+    change_description: text,
+  });
+  if (error) { toast('Could not submit: ' + error.message, 'err'); return; }
+  toast('Submitted for the supervising doctor\'s review.', 'ok');
+  document.getElementById('protocolChangeText').value = "";
+}
+
+/* ------------------------------------------------------------------
+   BOOTSTRAP
+   ------------------------------------------------------------------ */
+(async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) { state.session = session; await afterLogin(); }
+})();
+</script>
+</body>
+</html>
